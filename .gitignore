@@ -1,0 +1,15 @@
+.svn/
+target/
+*.class
+.classpath
+.project
+.settings/
+tmp
+temp
+*.log
+.idea/
+*.iml
+.DS_Store
+*.dat
+conf/
+
