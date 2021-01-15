@@ -1,0 +1,86 @@
+package com.datax.dbus.increment;
+
+
+import com.alibaba.otter.canal.protocol.FlatMessage;
+import com.datax.dbus.canal.FlatMessageSchema;
+import com.datax.dbus.function.DbusProcessFuntion;
+import com.datax.dbus.model.Flow;
+import com.datax.dbus.sink.HbaseSyncSink;
+import com.datax.dbus.source.FlowSoure;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.datastream.BroadcastStream;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
+
+
+import java.util.Properties;
+
+/**
+ * 增量同步flink app
+ */
+public class IncrementSyncApp {
+    public static final String TOPIC = "example";
+
+    public static final MapStateDescriptor<String, Flow> flowStateDescriptor =
+            new MapStateDescriptor<>(
+                    "flowBroadcastState",
+                    BasicTypeInfo.STRING_TYPE_INFO,
+                    TypeInformation.of(new TypeHint<Flow>() {
+                    }));
+
+
+    public static void main(String[] args) throws Exception {
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        Properties props = new Properties();
+        props.put("bootstrap.servers", "localhost:9092");
+        props.put("zookeeper.connect", "localhost:2181");
+        props.put("group.id", "group18");
+        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("auto.offset.reset", "earliest");
+        props.put("flink.partition-discovery.interval-millis", "30000");
+
+        FlinkKafkaConsumer010<FlatMessage> myConsumer = new FlinkKafkaConsumer010<>(
+                TOPIC,
+                new FlatMessageSchema(),
+                props
+        );
+
+        //FlatMessage事件流
+        DataStream<FlatMessage> meaasge = env.addSource(myConsumer);
+
+        //keyby：同一个库，同一个表的FlatMessage会
+        KeyedStream<FlatMessage, String> keyedMessage = meaasge.keyBy(new KeySelector<FlatMessage, String>() {
+            @Override
+            public String getKey(FlatMessage value) throws Exception {
+                return value.getDatabase() + value.getTable();
+            }
+        });
+
+        //Flow配置流：Flow由配置管理模块维护在数据库里
+        final BroadcastStream<Flow> flowBroadcastStream = env.addSource(new FlowSoure())
+                .broadcast(flowStateDescriptor);
+
+        // 连接两个流并过滤不需要同步的数据
+        DataStream<Tuple2<FlatMessage, Flow>> connectedStream = keyedMessage
+                .connect(flowBroadcastStream) //  BroadcastStream 放在后面
+                .process(new DbusProcessFuntion())
+                .setParallelism(1);
+
+//        connectedStream.print();
+
+
+        // 写入hbase
+        connectedStream.addSink(new HbaseSyncSink());
+
+        env.execute("Flink add sink");
+    }
+}
