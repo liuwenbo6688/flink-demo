@@ -64,6 +64,7 @@ under the License.
 	<dependencies>
 		<!-- Apache Flink dependencies -->
 		<!-- These dependencies are provided, because they should not be packaged into the JAR file. -->
+		<!-- 核心依赖 provided，不打进jar包， 核心依赖尽可能小 -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-java</artifactId>
@@ -76,6 +77,8 @@ under the License.
 			<version>${flink.version}</version>
 			<scope>provided</scope>
 		</dependency>
+
+		<!-- .....................下面为应用依赖，需要打进jar包................... -->
 
 		<!-- flink table -->
 		<dependency>
@@ -101,12 +104,13 @@ under the License.
 		</dependency>
 
 
-		<!-- hadoop  -->
+		<!-- flink 应用中需要使用Hadoop的input/output format -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-hadoop-compatibility_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
