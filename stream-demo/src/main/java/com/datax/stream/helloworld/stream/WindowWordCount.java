@@ -22,13 +22,14 @@ public class WindowWordCount {
 
         env.getConfig().setGlobalJobParameters(params);
 
-        final int windowSize = params.getInt("window", 10);
-        final int slideSize = params.getInt("slide", 5);
 
         DataStream<Tuple2<String, Integer>> counts = text
                 .flatMap(new WordCount.Tokenizer())
                 .keyBy(0)
-                .countWindow(windowSize, slideSize)
+                /**
+                 * 每当某一个key的个数达到5的时候触发计算，计算最近该key最近10个元素的内容
+                 */
+                .countWindow(10, 5)
                 .sum(1);
 
         System.out.println("Printing result to stdout. Use --output to specify output path.");
