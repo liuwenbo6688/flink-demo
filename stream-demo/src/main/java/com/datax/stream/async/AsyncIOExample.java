@@ -2,9 +2,7 @@ package com.datax.stream.async;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.checkpoint.ListCheckpointed;
@@ -30,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Example to illustrates how to use {@link AsyncFunction}.
- *
+ * <p>
  * 异步 IO
  */
 public class AsyncIOExample {
@@ -70,7 +68,7 @@ public class AsyncIOExample {
         public void run(SourceContext<Integer> ctx) throws Exception {
             while ((start < counter || counter == -1) && isRunning) {
 
-                synchronized ( ctx.getCheckpointLock() ) {
+                synchronized (ctx.getCheckpointLock()) {
                     ctx.collect(start);
                     ++start;
 
@@ -89,7 +87,6 @@ public class AsyncIOExample {
             isRunning = false;
         }
     }
-
 
 
     private static class SampleAsyncFunction extends RichAsyncFunction<Integer, String> {
@@ -150,26 +147,22 @@ public class AsyncIOExample {
 
     public static void main(String[] args) throws Exception {
 
-
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(1000L, CheckpointingMode.EXACTLY_ONCE);
         env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
 
         final String mode = "ordered";
-        // create input stream of an single integer
+
         DataStream<Integer> inputStream = env
                 .addSource(new SimpleSource(100000));
 
-        // create async function, which will *wait* for a while to simulate the process of async i/o
         AsyncFunction<Integer, String> function =
                 new SampleAsyncFunction(100, 0.001f, 20000);
 
-        // add async operator to streaming job
         DataStream<String> result;
         if (ORDERED.equals(mode)) {
             // 有序，消息接收和的发送到下游的顺序相同
-            result = AsyncDataStream.orderedWait(
-                    inputStream,
+            result = AsyncDataStream.orderedWait(inputStream,
                     function, // AsyncFunction
                     10000L,
                     TimeUnit.MILLISECONDS,
@@ -181,27 +174,28 @@ public class AsyncIOExample {
              * 对于 ProcessingTime 完全无序
              * 对于 EventTime ，两个watermark之间的数据是无序的
              */
-            result = AsyncDataStream.unorderedWait(
-                    inputStream,
-                    function,// AsyncFunction
+            result = AsyncDataStream.unorderedWait(inputStream,
+                    function, // AsyncFunction
                     10000L,
                     TimeUnit.MILLISECONDS,
                     20).setParallelism(1);
         }
 
-        // add a reduce to get the sum of each keys.
+
+        // 求 word count
         result.flatMap(new FlatMapFunction<String, Tuple2<String, Integer>>() {
-                    private static final long serialVersionUID = -938116068682344455L;
-                    @Override
-                    public void flatMap(String value, Collector<Tuple2<String, Integer>> out) throws Exception {
-                        out.collect(new Tuple2<>(value, 1));
-                    }
-                })
+            private static final long serialVersionUID = -938116068682344455L;
+
+            @Override
+            public void flatMap(String value, Collector<Tuple2<String, Integer>> out) throws Exception {
+                out.collect(new Tuple2<>(value, 1));
+            }
+        })
                 .keyBy(0)
                 .sum(1)
                 .print();
 
-        // execute the program
+
         env.execute("Async IO Example");
     }
 }
