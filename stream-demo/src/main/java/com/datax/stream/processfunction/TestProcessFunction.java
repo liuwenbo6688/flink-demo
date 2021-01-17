@@ -44,7 +44,7 @@ public class TestProcessFunction {
 
         // apply the process function onto a keyed stream
         DataStream<Tuple2<String, Long>> result = stream
-                // 作用在keyBy上
+                // 作用在keyBy上,根据userName分组
                 .keyBy(new KeySelector<OptLog, String>() {
                     @Override
                     public String getKey(OptLog value) throws Exception {
@@ -217,6 +217,7 @@ public class TestProcessFunction {
                 int randomNum = (int) (1 + Math.random() * (5 - 1 + 1));
 
                 sourceContext.collect(
+                        // 模拟数据
                         OptLog.of(nameArray[randomNum - 1],
                                 randomNum,
                                 System.currentTimeMillis())
