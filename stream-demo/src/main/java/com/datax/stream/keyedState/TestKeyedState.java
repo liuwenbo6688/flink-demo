@@ -85,11 +85,14 @@ class CountWithKeyedState extends RichFlatMapFunction<Tuple2<Long, Long>, Tuple2
         /**
          * keyed state 可以设置TTL
          * 按 processing time 时间过期
+         *
+         * 清理策略：已经过期的数据被显示读取时才会清理（可能会导致状态越来越大，后续版本会改进）
          */
-
         StateTtlConfig ttlConfig = StateTtlConfig
                 .newBuilder(Time.seconds(100))
+                // 更新最近访问时间的策略（refresh）| OnCreateAndWrite | OnReadAndWrite
                 .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
+                // 是否返回过期值（过期尚未清理，此时正好被访问）
                 .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)
                 .build();
 
