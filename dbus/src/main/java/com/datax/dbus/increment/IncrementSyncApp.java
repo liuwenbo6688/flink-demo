@@ -6,7 +6,7 @@ import com.datax.dbus.canal.FlatMessageSchema;
 import com.datax.dbus.function.DbusProcessFuntion;
 import com.datax.dbus.model.Flow;
 import com.datax.dbus.sink.HbaseSyncSink;
-import com.datax.dbus.source.FlowSoure;
+import com.datax.dbus.source.FlowSource;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeHint;
@@ -66,7 +66,7 @@ public class IncrementSyncApp {
         });
 
         //Flow配置流：Flow由配置管理模块维护在数据库里
-        final BroadcastStream<Flow> flowBroadcastStream = env.addSource(new FlowSoure())
+        final BroadcastStream<Flow> flowBroadcastStream = env.addSource(new FlowSource())
                 .broadcast(flowStateDescriptor);
 
         // 连接两个流并过滤不需要同步的数据

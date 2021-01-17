@@ -13,7 +13,7 @@ import java.sql.Statement;
  *
  */
 
-public class FlowSoure extends RichSourceFunction<Flow> {
+public class FlowSource extends RichSourceFunction<Flow> {
     private static final long serialVersionUID = 3519222623348229907L;
     private volatile boolean isRunning = true;
     private String query = "select * from test.dbus_flow";
