@@ -9,8 +9,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
  */
 public class TestFilter {
     public static void main(String[] args) throws Exception {
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
         DataStream<Long> input = env.generateSequence(-5, 5);
 
         input.filter(new FilterFunction<Long>() {

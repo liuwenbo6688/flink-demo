@@ -10,6 +10,7 @@ import org.apache.flink.util.Collector;
  */
 public class TestFlatmap {
     public static void main(String[] args) throws Exception {
+
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         DataStream<String> input = env.fromElements(WORDS);
@@ -22,6 +23,9 @@ public class TestFlatmap {
 
                 for (String token : tokens) {
                     if (token.length() > 0) {
+                        /**
+                         * 1进n出
+                         */
                         out.collect(token);
                     }
                 }
