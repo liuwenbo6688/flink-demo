@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
- *
+ * project : 从tuple中选择属性的子集
  */
 public class TestProject {
 
