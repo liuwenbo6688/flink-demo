@@ -14,7 +14,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
 
 /**
- *
+ * keyed  state
+ * <p>
+ * 相同key下，相邻3个value的平均值
  */
 public class TestKeyedState {
 
