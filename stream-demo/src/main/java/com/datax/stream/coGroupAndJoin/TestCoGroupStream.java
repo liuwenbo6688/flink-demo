@@ -42,8 +42,6 @@ public class TestCoGroupStream {
                         String[] arr = value.split(" ");
                         return Tuple2.of(arr[0], arr[1]);
                     }
-
-
                 });
 
 
@@ -53,7 +51,6 @@ public class TestCoGroupStream {
         DataStream<Tuple2<String, String>> stream2 = env
                 .socketTextStream("127.0.0.1", 9001)
                 .map(new MapFunction<String, Tuple2<String, String>>() {
-
                     @Override
                     public Tuple2<String, String> map(String value) throws Exception {
                         String[] arr = value.split(" ");
@@ -66,25 +63,21 @@ public class TestCoGroupStream {
          *  stream1 coGroup stream2
          */
         stream1.coGroup(stream2)
-
                 .where(new KeySelector<Tuple2<String, String>, String>() {
                     @Override
                     public String getKey(Tuple2<String, String> value) throws Exception {
                         return value.f0;
                     }
                 })
-
                 .equalTo(new KeySelector<Tuple2<String, String>, String>() {
                     @Override
                     public String getKey(Tuple2<String, String> value) throws Exception {
                         return value.f0;
                     }
                 })
-
                 .window(ProcessingTimeSessionWindows.withGap(Time.seconds(30)))
-
+                // 只是为了来一个数据触发计算一次，方便观察
                 //.trigger(CountTrigger.of(1))
-
                 .apply(new CoGroupFunction<Tuple2<String, String>, Tuple2<String, String>, String>() {
                     @Override
                     public void coGroup(Iterable<Tuple2<String, String>> first,  //
