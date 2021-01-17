@@ -7,9 +7,9 @@ import org.apache.flink.streaming.api.functions.co.CoFlatMapFunction;
 import org.apache.flink.util.Collector;
 
 /**
- *
+ * ConnectedStreams
  */
-public class TestCoFlatMapStream {
+public class TestConnectedFlatMapStream {
 
 
     public static void main(String[] args) throws Exception {
@@ -17,8 +17,10 @@ public class TestCoFlatMapStream {
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        /**
+         * 双流类型不一样
+         */
         DataStream<Long> someStream = env.generateSequence(0, 10);
-
         DataStream<String> otherStream = env.fromElements(WORDS);
 
         ConnectedStreams<Long, String> connectedStreams = someStream.connect(otherStream);
@@ -31,6 +33,7 @@ public class TestCoFlatMapStream {
          * CoFlatMapFunction
          */
         DataStream<String> result = connectedStreams.flatMap(new CoFlatMapFunction<Long, String, String>() { // <IN1, IN2, OUT>
+            // 可以共享状态
 
             @Override
             public void flatMap1(Long value, Collector<String> out) throws Exception {
