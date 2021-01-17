@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
- *
+ * 每个班级语文成绩的总分
  */
 public class TestReduce {
 
@@ -28,6 +28,9 @@ public class TestReduce {
             public Tuple4<String, String, String, Integer> reduce(Tuple4<String, String, String, Integer> value1,
                                                                   Tuple4<String, String, String, Integer> value2) throws Exception {
 
+                /**
+                 *
+                 */
                 value1.f3 += value2.f3;
                 return value1;
             }
