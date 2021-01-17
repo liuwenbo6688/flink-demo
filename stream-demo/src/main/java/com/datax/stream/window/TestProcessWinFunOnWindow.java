@@ -10,6 +10,7 @@ import org.apache.flink.util.Collector;
 
 /**
  *  ProcessWindowFunction
+ *  获得一个包含窗口所有元素的迭代器，以性能和资源消耗为代价的
  */
 public class TestProcessWinFunOnWindow {
 
@@ -58,7 +59,7 @@ public class TestProcessWinFunOnWindow {
                 sum += in.f2;
                 count++;
             }
-            //out.collect("Window: " + context.window() + "count: " + count);
+            System.out.println("Window: " + context.window() + " ,count: " + count);
             out.collect((double) (sum / count));
         }
     }

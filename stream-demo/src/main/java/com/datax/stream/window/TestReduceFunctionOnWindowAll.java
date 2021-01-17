@@ -6,7 +6,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
- *
+ *  windowAll:
+ *  没有分组的窗口，并行度就是1
  */
 public class TestReduceFunctionOnWindowAll {
     public static void main(String[] args) throws Exception {
@@ -21,7 +22,10 @@ public class TestReduceFunctionOnWindowAll {
                     @Override
                     public Tuple3<String, String, Integer> reduce(Tuple3<String, String, Integer> value1,
                                                                   Tuple3<String, String, Integer> value2) throws Exception {
-                        return new Tuple3<>(value1.f0, value1.f1, value1.f2 + value2.f2);
+                        return new Tuple3<>(
+                                value1.f0,
+                                value1.f1,
+                                value1.f2 + value2.f2);
                     }
                 });
         totalPoints.print();

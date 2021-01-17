@@ -7,6 +7,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
  *  ReduceFunction
+ *  更高效，因为在每一个窗口中增量的对每一个到达元素进行聚合操作
+ *  缺点：场景覆盖不全，无法获取窗口的元数据
  */
 public class TestReduceFunctionOnWindow {
 
@@ -27,7 +29,11 @@ public class TestReduceFunctionOnWindow {
                     public Tuple3<String, String, Integer> reduce(Tuple3<String, String, Integer> value1,
                                                                   Tuple3<String, String, Integer> value2) throws Exception {
 
-                        return new Tuple3<>(value1.f0, value1.f1, value1.f2 + value2.f2);
+                        return new Tuple3<>(
+                                value1.f0,
+                                value1.f1,
+                                value1.f2 + value2.f2
+                        );
                     }
                 });
 

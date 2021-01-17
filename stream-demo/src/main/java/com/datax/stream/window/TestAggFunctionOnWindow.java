@@ -7,6 +7,11 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 /**
+ *  AggregateFunction 是 ReduceFunction 的普适版本
+ *
+ *  输入类型
+ *  累加器类型
+ *  输出类型
  *
  */
 public class TestAggFunctionOnWindow {
@@ -62,8 +67,8 @@ public class TestAggFunctionOnWindow {
         /**
          * 将元素添加到累加器并返回新的累加器value
          *
-         * @param value
-         * @param accumulator
+         * @param value  输入类型
+         * @param accumulator  累加器类型
          * @return
          */
         @Override
