@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * 自定义source
+ * SourceFunction 并行度是 1
  *
  */
 public class SimpleSource implements SourceFunction<Integer>, ListCheckpointed<Integer> {
