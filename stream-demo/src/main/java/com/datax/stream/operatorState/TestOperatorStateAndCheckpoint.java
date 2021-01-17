@@ -195,9 +195,10 @@ class CountWithOperatorState extends RichFlatMapFunction<Long, Tuple2<Integer, S
                 new ListStateDescriptor<Long>("checkPointCountList", TypeInformation.of(new TypeHint<Long>() {
                 }));
         /**
-         * getListState
-         * getUnionListState
-         * getBroadcastState
+         * 并行度改变的时候，Redistribute
+         * getListState       均匀划分
+         * getUnionListState  元素全部分配给新的task
+         * getBroadcastState  所有task上的元素都是一样的
          */
         checkPointCountList = context.getOperatorStateStore().getListState(listStateDescriptor);
 
