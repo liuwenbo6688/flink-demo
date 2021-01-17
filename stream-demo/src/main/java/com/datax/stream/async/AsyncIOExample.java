@@ -120,6 +120,9 @@ public class AsyncIOExample {
         @Override
         public void asyncInvoke(final Integer input, final ResultFuture<String> resultFuture) {
 
+            /**
+             * 这个方法里不要做阻塞的操作，要全部异步操作
+             */
             executorService.submit(() -> {
                 // 模拟外部异步查询
                 // wait for while to simulate async operation here
@@ -139,7 +142,6 @@ public class AsyncIOExample {
                     resultFuture.complete(new ArrayList<>(0));
                 }
             });
-
 
         }
     }
