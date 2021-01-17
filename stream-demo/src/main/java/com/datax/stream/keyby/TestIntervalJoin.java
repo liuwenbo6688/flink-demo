@@ -12,7 +12,8 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 /**
- *   a time interval join
+ * a time interval join
+ * 两个流的join，只支持事件时间
  */
 public class TestIntervalJoin {
 
@@ -22,7 +23,7 @@ public class TestIntervalJoin {
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // 事件时间
+        // 设置事件时间
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
 
@@ -42,7 +43,6 @@ public class TestIntervalJoin {
                 });
 
 
-
         KeyedStream<Transcript, String> keyedStream = input1.keyBy(new KeySelector<Transcript, String>() {
             @Override
             public String getKey(Transcript value) throws Exception {
@@ -57,24 +57,28 @@ public class TestIntervalJoin {
         });
 
 
-
         // 应用场景： 把一定时间范围内相关的分组数据拉成一个宽表
         // intervalJoin 只支持 EventTime
 
         // e1.timestamp + lowerBound <= e2.timestamp <= e1.timestamp + upperBound
         // key1 == key2 && leftTs - 2 < rightTs < leftTs + 2
 
-        keyedStream.intervalJoin(otherKeyedStream)
-                .between(Time.milliseconds(-2), Time.milliseconds(2))
+        keyedStream.intervalJoin(otherKeyedStream) // key1 == key2
+                .between(Time.milliseconds(-2), Time.milliseconds(2)) // leftTs - 2毫秒 < rightTs < leftTs + 2毫秒
                 .upperBoundExclusive()
                 .lowerBoundExclusive()
-                .process(new ProcessJoinFunction<Transcript, Student, Tuple5<String, String, String, String, Integer>>() {
+                .process(new ProcessJoinFunction<Transcript, Student,
+                        Tuple5<String, String, String, String, Integer>>() {
                     @Override
-                    public void processElement(Transcript transcript, Student student, Context ctx, Collector<Tuple5<String, String, String, String, Integer>> out) throws Exception {
+                    public void processElement(Transcript transcript,
+                                               Student student,
+                                               Context ctx,
+                                               Collector<Tuple5<String, String, String, String, Integer>> out) throws Exception {
                         out.collect(Tuple5.of(transcript.id, transcript.name, student.class_, transcript.subject, transcript.score));
                     }
 
-                }).print();
+                })
+                .print();
 
         env.execute();
 
@@ -99,8 +103,6 @@ public class TestIntervalJoin {
             new Student("5", "钱七", "class2", System.currentTimeMillis()),
             new Student("6", "马二", "class2", System.currentTimeMillis())
     };
-
-
 
 
     private static class Transcript {
