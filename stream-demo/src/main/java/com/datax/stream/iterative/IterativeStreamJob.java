@@ -33,12 +33,13 @@ public class IterativeStreamJob {
         DataStream<Long> greaterThanZero = minusOne.filter(new FilterFunction<Long>() {
             @Override
             public boolean filter(Long value) throws Exception {
+                // 如果值大于0，继续返回迭代
                 return value > 0;
             }
         });
 
         // 4. 调用IterativeStream的closeWith方法可以关闭一个迭代（也可表述为定义了迭代尾）
-        itStream.closeWith(greaterThanZero);
+        itStream.closeWith(greaterThanZero/*反馈流，继续执行计算*/);
 
         // 5. 定义“终止迭代”的逻辑  (符合条件的元素将被分发给下游而不用于进行下一次迭代)
         DataStream<Long> lessThanZero = minusOne.filter(new FilterFunction<Long>() {

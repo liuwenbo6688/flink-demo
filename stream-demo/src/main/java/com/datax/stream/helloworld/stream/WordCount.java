@@ -16,6 +16,13 @@ public class WordCount {
         final ParameterTool params = ParameterTool.fromArgs(args);
 
         // set up the execution environment
+        /**
+         * 会自动判断当前运行是在哪一种环境？
+         * LocalStreamEnvironment
+         * RemoteStreamEnvironment
+         * StreamContextEnvironment
+         * StreamPlanEnvironment
+         */
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // make parameters available in the web interface
