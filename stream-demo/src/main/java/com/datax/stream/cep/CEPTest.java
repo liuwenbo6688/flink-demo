@@ -25,6 +25,9 @@ public class CEPTest {
         env.setParallelism(1);
 
 
+        /**
+         * 第一步：输入事件流的创建
+         */
         DataStreamSource source = env.fromElements(
                 //浏览记录
                 Tuple3.of("Marry", "外套", 1L),
@@ -40,7 +43,11 @@ public class CEPTest {
         );
 
 
-        //定义Pattern,寻找连续搜索帽子的用户
+
+        /**
+         * 第二步：定义Pattern规则
+         * 定义Pattern,寻找连续搜索帽子的用户
+         */
         Pattern<Tuple3<String, String, Long>, Tuple3<String, String, Long>> pattern = Pattern
                 .<Tuple3<String, String, Long>>begin("start")
                 .where(new SimpleCondition<Tuple3<String, String, Long>>() {
@@ -57,14 +64,16 @@ public class CEPTest {
                     }
                 });
 
-        KeyedStream keyedStream = source.keyBy(0);
-
         /**
-         *
+         * 第三步：Pattern应用到数据流上进行检测
          */
+        KeyedStream keyedStream = source.keyBy(0);
         PatternStream patternStream = CEP.pattern(keyedStream, pattern);
 
 
+        /**
+         * 第四步：选取结果
+         */
         SingleOutputStreamOperator matchStream = patternStream.select(new PatternSelectFunction<Tuple3<String, String, Long>, String>() {
             @Override
             public String select(Map<String, List<Tuple3<String, String, Long>>> pattern) throws Exception {
