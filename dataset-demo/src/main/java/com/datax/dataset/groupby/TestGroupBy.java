@@ -25,17 +25,20 @@ public class TestGroupBy {
 
 
         /**
-         *
+         * 按性别分组，组内按年龄升序排列
          */
         inputs.groupBy(2)
-                // 组内排序
-                .sortGroup(3, Order.ASCENDING).first(10).print();
+                .sortGroup(3, Order.ASCENDING)
+                .first(10)
+                .print();
 
 
         /**
-         *
+         * 按性别分组，组内按年龄求和
          */
-        inputs.groupBy(2).aggregate(Aggregations.SUM,3).print();
+        inputs.groupBy(2)
+                .aggregate(Aggregations.SUM,3)
+                .print();
 
 
     }
