@@ -42,49 +42,42 @@ public class ConnectOrderStream {
 
 
         Properties properties = new Properties();
-        //
 
-        // 读取大订单数据，读取的是 json 类型的字符串
+
+        /**
+         * 读取大订单数据，读取的是 json 类型的字符串
+         */
         FlinkKafkaConsumerBase<String> consumerBigOrder =
-                new FlinkKafkaConsumer010<>("big_order_topic_name",
-                        new SimpleStringSchema(),
-                        properties
-                ).setStartFromGroupOffsets();
+                new FlinkKafkaConsumer010<>("big_order_topic_name", new SimpleStringSchema(), properties)
+                        .setStartFromGroupOffsets();
 
         KeyedStream<Order, String> bigOrderStream = env.addSource(consumerBigOrder)
-                // 有状态算子一定要配置 uid
-                .uid(KAFKA_TOPIC)
-                // 过滤掉 null 数据
-                .filter(Objects::nonNull)
-                // 将 json 解析为 Order 类
-                .map(str -> JSON.parseObject(str, Order.class))
-                // 提取 EventTime，分配 WaterMark
+                .uid(KAFKA_TOPIC) // 有状态算子一定要配置 uid
+                .filter(Objects::nonNull) // 过滤掉 null 数据
+                .map(str -> JSON.parseObject(str, Order.class)) // 将 json 解析为 Order 类
                 .assignTimestampsAndWatermarks(
                         new BoundedOutOfOrdernessTimestampExtractor<Order>(Time.seconds(60)) {
                             @Override
                             public long extractTimestamp(Order order) {
                                 return order.getTime();
                             }
-                        })
-                // 按照 订单id 进行 keyBy
-                .keyBy(Order::getOrderId);
+                        }) // 提取 EventTime，分配 WaterMark
+                .keyBy(Order::getOrderId); // 按照 订单id 进行 keyBy
 
 
-        //
-        // 小订单处理逻辑与大订单完全一样
+        /**
+         * 小订单处理逻辑与大订单完全一样
+         */
         FlinkKafkaConsumerBase<String> consumerSmallOrder =
-                new FlinkKafkaConsumer010<>("small_order_topic_name",
-                        new SimpleStringSchema(),
-                        properties
-                ).setStartFromGroupOffsets();
+                new FlinkKafkaConsumer010<>("small_order_topic_name", new SimpleStringSchema(), properties)
+                        .setStartFromGroupOffsets();
 
         KeyedStream<Order, String> smallOrderStream = env.addSource(consumerSmallOrder)
                 .uid(KAFKA_TOPIC)
                 .filter(Objects::nonNull)
                 .map(str -> JSON.parseObject(str, Order.class))
                 .assignTimestampsAndWatermarks(
-                        new BoundedOutOfOrdernessTimestampExtractor<Order>
-                                (Time.seconds(10)) {
+                        new BoundedOutOfOrdernessTimestampExtractor<Order>(Time.seconds(10)) {
                             @Override
                             public long extractTimestamp(Order order) {
                                 return order.getTime();
@@ -93,9 +86,10 @@ public class ConnectOrderStream {
                 .keyBy(Order::getOrderId);
 
 
-        SingleOutputStreamOperator<Tuple2<Order, Order>> resStream = bigOrderStream
-                // 使用 connect 连接大小订单的流，然后使用 CoProcessFunction 进行数据匹配
-                .connect(smallOrderStream)
+        /**
+         *  使用connect连接大小订单的流，然后使用 CoProcessFunction 进行数据匹配
+         */
+        SingleOutputStreamOperator<Tuple2<Order, Order>> resStream = bigOrderStream.connect(smallOrderStream)
                 .process(new CoProcessFunction<Order, Order, Tuple2<Order, Order>>() {
 
                     // 大订单数据先来了，将大订单数据保存在 bigState 中。
@@ -119,15 +113,15 @@ public class ConnectOrderStream {
                                 new ValueStateDescriptor<>("smallState", Order.class));
 
 
-                        timerState = getRuntimeContext().getState(new ValueStateDescriptor<>(
-                                "timerStateDescriptor",
+                        timerState = getRuntimeContext().getState(new ValueStateDescriptor<>("timerStateDescriptor",
                                 TypeInformation.of(new TypeHint<Long>() {
-                                })
-                        ));
+                                })));
                     }
 
 
-                    // 大订单的处理逻辑
+                    /**
+                     * 大订单的处理逻辑
+                     */
                     @Override
                     public void processElement1(Order bigOrder, Context ctx,
                                                 Collector<Tuple2<Order, Order>> out)
@@ -155,18 +149,43 @@ public class ConnectOrderStream {
                         }
                     }
 
+
+                    /**
+                     * 小订单的处理逻辑
+                     */
                     @Override
                     public void processElement2(Order smallOrder, Context ctx,
-                                                Collector<Tuple2<Order, Order>> out)
-                            throws Exception {
+                                                Collector<Tuple2<Order, Order>> out) throws Exception {
                         // 这里先省略代码，小订单的处理逻辑与大订单的处理逻辑完全类似
-                        // ...................................................
+
+                        Order bigOrder = bigState.value();
+
+                        if (bigOrder != null) { // 表示大订单先到了
+
+                            out.collect(Tuple2.of(smallOrder, bigOrder));
+                            // 清空小订单对应的 State 信息
+                            smallState.clear();
+
+                            // 这里可以将 Timer 清除。因为两个流都到了，没必要再触发 onTimer 了
+                            ctx.timerService().deleteEventTimeTimer(timerState.value());
+                            timerState.clear();
+
+                        } else {
+                            // 小订单先到了
+                            smallState.update(smallOrder);
+
+                            // 1 分钟后触发定时器，当前的 eventTime + 60s
+                            long time = bigOrder.getTime() + 60000;
+                            timerState.update(time); // 1 分钟后触发定时器，并将定时器的触发时间保存在 timerState 中
+                            ctx.timerService().registerEventTimeTimer(time);
+                        }
+
+
                     }
 
                     @Override
                     public void onTimer(long timestamp, OnTimerContext ctx,
-                                        Collector<Tuple2<Order, Order>> out)
-                            throws Exception {
+                                        Collector<Tuple2<Order, Order>> out) throws Exception {
                         // 定时器触发了，即 1 分钟内没有接收到两个流。
                         // 大订单不为空，则将大订单信息侧流输出
                         if (bigState.value() != null) {
@@ -176,6 +195,7 @@ public class ConnectOrderStream {
                         if (smallState.value() != null) {
                             ctx.output(smallOrderTag, smallState.value());
                         }
+
                         bigState.clear();
                         smallState.clear();
                     }
@@ -193,7 +213,7 @@ public class ConnectOrderStream {
         // 只有小订单时，没有匹配到 大订单，属于异常数据，需要保存到外部系统，进行特殊处理
         resStream.getSideOutput(smallOrderTag).print();
 
-        env.execute("");
+        env.execute("......");
 
     }
 }
