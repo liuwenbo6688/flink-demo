@@ -80,6 +80,9 @@ class BitMapDistinctAggregateFunction implements AggregateFunction<Tuple2<String
         return new Tuple2<>(accumulator.f0, accumulator.f1.getLongCardinality());
     }
 
+    /**
+     * SessionWindow的时候才会用到这个方法进行merge
+     */
     @Override
     public Tuple2<String, Roaring64NavigableMap> merge(Tuple2<String, Roaring64NavigableMap> a,
                                                        Tuple2<String, Roaring64NavigableMap> b) {

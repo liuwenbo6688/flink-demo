@@ -93,7 +93,9 @@ class HyperLogLogDistinctFunction implements AggregateFunction<Tuple2<String, Lo
         return new Tuple2<>(accumulator.f0, cardinality);
     }
 
-
+    /**
+     * SessionWindow的时候才会用到这个方法进行merge
+     */
     @Override
     public Tuple2<String, HLL> merge(Tuple2<String, HLL> a, Tuple2<String, HLL> b) {
         a.f1.union(b.f1);
