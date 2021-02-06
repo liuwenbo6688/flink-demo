@@ -16,7 +16,12 @@ import org.apache.flink.util.Collector;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import java.nio.charset.Charset;
 
+
+/**
+ * 布隆过滤器去重，非精准去重
+ */
 public class BloomFilterDistinct {
 
 
@@ -74,8 +79,8 @@ class BloomFilterDistinctFunction extends KeyedProcessFunction<Tuple, Tuple2<Str
         Long skuCount = countState.value();
 
         if (bloomFilter == null) {
-            bloomFilter = BloomFilter.create(Funnels.unencodedCharsFunnel(), 10000000);
-//            BloomFilter.create(Funnels.stringFunnel(), 10000000);
+//            bloomFilter = BloomFilter.create(Funnels.unencodedCharsFunnel(), 10000000);
+            bloomFilter = BloomFilter.create(Funnels.stringFunnel(Charset.defaultCharset()), 10000000);
         }
 
         if (skuCount == null) {
