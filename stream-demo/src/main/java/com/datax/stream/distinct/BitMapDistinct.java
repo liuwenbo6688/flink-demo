@@ -9,7 +9,7 @@ import org.roaringbitmap.longlong.Roaring64NavigableMap;
 
 
 /**
- * 海量数据去重方案
+ * 海量数据去重方案(精准去重)
  * <p>
  * 计算每个APP的去重用户数
  */
