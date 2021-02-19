@@ -12,4 +12,4 @@ temp
 .DS_Store
 *.dat
 conf/
-
+dependency-reduced-pom.xml
