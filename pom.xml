@@ -30,6 +30,7 @@ under the License.
 		<module>dataset-demo</module>
 		<module>table-demo</module>
         <module>purchase-behavior-demo</module>
+        <module>flink-user-portrait</module>
     </modules>
 
 
